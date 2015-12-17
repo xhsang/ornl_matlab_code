@@ -1,0 +1,23 @@
+function seeds_location=find_seeds(image_frame,gsize,gsigma,threshold,verbose)
+
+% image_frame: the image we use to find seeds
+% gsize: size of the gaussian peak template
+% gsigma: sigma of the gaussian peak
+% verbose: output the figures or not
+if verbose == 1
+    figure;
+end
+
+template=fspecial('gaussian',41,1);
+C=normxcorr2(template,ImageFrames{1});
+subplot(1,2,1);
+imagesc(C);
+axis image
+colormap(gray);
+%figure
+subplot(1,2,2);
+imagesc(C>0.25);
+axis image
+colormap(gray);
+
+end
