@@ -90,6 +90,7 @@ key_frame_num=j-1;
 
 
 %% find the seeds from the first frame
+% ignore
 figure;
 imagesc(ImageFrames{1});
 axis image;
@@ -105,6 +106,7 @@ small_area=ImageFrames{1}(cc_rangex,cc_rangey);
 imagesc(small_area);
 
 %%
+% ignore
 figure;
 imagesc(small_area);
 axis image;
@@ -118,10 +120,58 @@ cc_rangex=position(2):1:position(2)+position(4);
 cc_rangey=position(1):1:position(1)+position(3);
 template=small_area(cc_rangex,cc_rangey);
 imagesc(template);
-%%
+%% use the gaussian distribution template
+% the gaussian template seems to work better
+% than an area arbitrarily selected from the image
 figure;
 template=fspecial('gaussian',41,1);
 C=normxcorr2(template,ImageFrames{1});
+subplot(1,2,1);
 imagesc(C);
+axis image
+colormap(gray);
+%figure
+subplot(1,2,2);
+imagesc(C>0.25);
+axis image
+colormap(gray);
 
-imagesc(C>0.2);
+%%
+r=-1:0.01:1;
+h=hist(C(:),r);
+plot(r,h);
+xlim([0.1 0.5]);
+
+%% it is time to create a function to find the seeds
+%seeds_location=find_seeds(ImageFrames{1},gsize,gsigma,threshold)
+seeds_location=find_seeds(ImageFrames{1},41,1,0.25,1);
+
+%% plot the seeds location on the image
+figure
+imagesc(ImageFrames{1});
+axis image
+colormap(gray);
+for j=1:1:length(seeds_location)
+    text(seeds_location(j,1),seeds_location(j,2),'o');
+end
+
+%% now we can focus on one particle
+ 
+if ~exist([folder,'/one_particle'], 'dir')
+    mkdir([folder,'/one_particle']);
+end
+particle_range=50;
+lx=floor(seeds_location(pn,2))
+ly=floor(seeds_location(pn,1))
+pn=4;
+for j=1:1:length(ImageFrames)
+    one_particle=ImageFrames{j}(...
+        lx-particle_range:lx+particle_range,...
+        ly-particle_range:ly+particle_range);
+    one_particle_frame{j}=one_particle;
+    imwrite(one_particle/max(one_particle(:)),[folder,'/one_particle/frame',num2str(j),'.jpg'],'jpg');
+end
+
+%% show those frames
+figure
+%% now find the size of those particles

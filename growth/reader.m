@@ -144,4 +144,53 @@ xlim([0.1 0.5]);
 
 %% it is time to create a function to find the seeds
 %seeds_location=find_seeds(ImageFrames{1},gsize,gsigma,threshold)
-seeds_location=find_seeds(ImageFrames{1},41,1,0.25);
+seeds_location=find_seeds(ImageFrames{1},41,1,0.25,1);
+
+%% plot the seeds location on the image
+figure
+imagesc(ImageFrames{1});
+axis image
+colormap(gray);
+for j=1:1:length(seeds_location)
+    text(seeds_location(j,1),seeds_location(j,2),'o');
+end
+
+%% now we can focus on one particle
+ 
+if ~exist([folder,'/one_particle'], 'dir')
+    mkdir([folder,'/one_particle']);
+end
+particle_range=50;
+lx=floor(seeds_location(pn,2))
+ly=floor(seeds_location(pn,1))
+pn=4;
+for j=1:1:length(ImageFrames)
+    one_particle=ImageFrames{j}(...
+        lx-particle_range:lx+particle_range,...
+        ly-particle_range:ly+particle_range);
+    one_particle_frame{j}=one_particle;
+    imwrite(one_particle/max(one_particle(:)),[folder,'/one_particle/frame',num2str(j),'.jpg'],'jpg');
+end
+
+%% show those frames
+figure
+subplot(2,2,1); imagesc(one_particle_frame{5}); axis image; colormap(gray);
+subplot(2,2,2); imagesc(one_particle_frame{15}); axis image; colormap(gray);
+subplot(2,2,3); imagesc(one_particle_frame{25}); axis image; colormap(gray);
+subplot(2,2,4); imagesc(one_particle_frame{35}); axis image; colormap(gray);
+%% now find the size of those particles
+[centers, radii, metric] = imfindcircles(one_particle_frame{15},[15 22]);
+viscircles(centers, radii,'EdgeColor','b');
+
+%%
+I=one_particle_frame{15};
+Iblur = imgaussfilt(I, 1);
+imagesc(Iblur);
+%%
+BW1 = edge(Iblur,'Canny',0.4);
+imshowpair(BW1,one_particle_frame{15},'montage')
+
+%%
+[centers, radii, metric] = imfindcircles(BW1,[10 25]);
+imagesc(Iblur);
+viscircles(centers, radii,'EdgeColor','b');
