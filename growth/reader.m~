@@ -174,4 +174,42 @@ end
 
 %% show those frames
 figure
+subplot(2,2,1); imagesc(one_particle_frame{5}); axis image; colormap(gray);
+subplot(2,2,2); imagesc(one_particle_frame{15}); axis image; colormap(gray);
+subplot(2,2,3); imagesc(one_particle_frame{25}); axis image; colormap(gray);
+subplot(2,2,4); imagesc(one_particle_frame{35}); axis image; colormap(gray);
 %% now find the size of those particles
+[centers, radii, metric] = imfindcircles(one_particle_frame{15},[15 22]);
+viscircles(centers, radii,'EdgeColor','b');
+
+%%
+I=one_particle_frame{15};
+Iblur = imgaussfilt(I, 1);
+imagesc(Iblur);
+%%
+BW1 = edge(Iblur,'Canny',0.4);
+imshowpair(BW1,one_particle_frame{15},'blend')
+
+%%
+[centers, radii, metric] = imfindcircles(BW1,[5 10]);
+imagesc(Iblur);
+viscircles(centers, radii,'EdgeColor','b');
+
+%% how about crosscorrelating
+
+imagesc(I)
+colormap(gray);
+
+%% create a template with a thin circle
+ctemp_size=21;
+circle_size=6;
+centerx=(ctemp_size+1)/2;
+centery=(ctemp_size+1)/2;
+ctemp=zeros(cte);
+for i=1:1:ctemp_size
+    for j=1:1:ctemp_size
+        d=sqrt((i-centerx)^2+(j-centery)^2);
+        if round(d)==circle_size
+        end
+    end
+end

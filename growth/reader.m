@@ -188,9 +188,37 @@ Iblur = imgaussfilt(I, 1);
 imagesc(Iblur);
 %%
 BW1 = edge(Iblur,'Canny',0.4);
-imshowpair(BW1,one_particle_frame{15},'montage')
+imshowpair(BW1,one_particle_frame{15},'blend')
 
 %%
-[centers, radii, metric] = imfindcircles(BW1,[10 25]);
+[centers, radii, metric] = imfindcircles(BW1,[5 10]);
 imagesc(Iblur);
 viscircles(centers, radii,'EdgeColor','b');
+
+%% how about crosscorrelating
+
+imagesc(I)
+colormap(gray);
+
+%% create a template with a thin circle
+ctemp_size=21;
+circle_size=6;
+centerx=(ctemp_size+1)/2;
+centery=(ctemp_size+1)/2;
+ctemp=zeros(ctemp_size,ctemp_size);
+for i=1:1:ctemp_size
+    for j=1:1:ctemp_size
+        d=sqrt((i-centerx)^2+(j-centery)^2);
+        if round(d)==circle_size
+            ctemp(i,j)=1;
+        end
+    end
+end
+imagesc(ctemp);
+
+%%
+C=normxcorr2(ctemp,I);
+subplot(1,2,1);
+imagesc(C);
+axis image
+colormap(gray);
