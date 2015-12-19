@@ -216,9 +216,30 @@ for i=1:1:ctemp_size
 end
 imagesc(ctemp);
 
+%% use this function to get a bunch of circles, either blurred or not
+ctemp_size=51;
+circle_temps=get_circle_templates(1:0.2:20,ctemp_size,0.5);
+%% test this on one frame to see if that works
+max_values=zeros(length(circle_temps),1);
+for i=1:1:length(circle_temps)
+    C=normxcorr2(circle_temps{i},I);
+    subplot(8,9,i);
+    imagesc(C(50:100,50:100));
+    temp=C(50:100,50:100);
+    max_values(i)=max(temp(:));
+    axis image
+    colormap(gray);
+end
+
+%% find the circle sizes for all the frames
+tic
+[max_values,max_locations,center_locations]=find_circle_sizes(video_file_name, one_particle_frame,circle_temps);
+toc
 %%
-C=normxcorr2(ctemp,I);
-subplot(1,2,1);
-imagesc(C);
-axis image
-colormap(gray);
+[V, index]=max(max_values);
+imshowpair(I,circle_temps{index},'blend');
+%%
+hold all
+plot(3:0.1:10,max_values)
+plot(3:0.1:10,max_value_noblur)
+plot(3:0.1:10,max_value_blur1)

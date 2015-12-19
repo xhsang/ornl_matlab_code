@@ -1,0 +1,6 @@
+function circle_temps=get_circle_templates(circle_size,ctemp_size)
+
+for i=1:1:length(circle_size)
+    
+end
+end

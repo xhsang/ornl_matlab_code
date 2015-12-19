@@ -205,11 +205,23 @@ ctemp_size=21;
 circle_size=6;
 centerx=(ctemp_size+1)/2;
 centery=(ctemp_size+1)/2;
-ctemp=zeros(cte);
+ctemp=zeros(ctemp_size,ctemp_size);
 for i=1:1:ctemp_size
     for j=1:1:ctemp_size
         d=sqrt((i-centerx)^2+(j-centery)^2);
         if round(d)==circle_size
+            ctemp(i,j)=1;
         end
     end
 end
+imagesc(ctemp);
+
+%% use this function to get a bunch of circles, either blurred or not
+circle_temps=get_circle_templates(3:0.1:10,ctemp_size);
+%%
+for i=1:1:
+C=normxcorr2(ctemp,I);
+subplot(1,2,1);
+imagesc(C);
+axis image
+colormap(gray);
