@@ -218,7 +218,8 @@ imagesc(ctemp);
 
 %% use this function to get a bunch of circles, either blurred or not
 ctemp_size=51;
-circle_temps=get_circle_templates(1:0.2:20,ctemp_size,0.5);
+circle_temps_diameter=1:0.2:20;
+circle_temps=get_circle_templates(circle_temps_diameter,ctemp_size,1);
 %% test this on one frame to see if that works
 max_values=zeros(length(circle_temps),1);
 for i=1:1:length(circle_temps)
@@ -233,13 +234,40 @@ end
 
 %% find the circle sizes for all the frames
 tic
-[max_values,max_locations,center_locations]=find_circle_sizes(video_file_name, one_particle_frame,circle_temps);
+[max_values,max_locations,center_locations,peak_location]=...
+    find_circle_sizes(video_file_name, one_particle_frame,circle_temps,0);
 toc
+
+%%
+imagesc(max_values);
+%%
+plot(center_locations(:,1),center_locations(:,2),'o-');
+
+%%
+[V,initial_peak_position]=max(max_values(end,:))
+peak_positions=zeros(length(one_particle_frame),1);
+max_values_fit=max_values-max_values;
+for i=length(one_particle_frame):-1:1
+    circle_response=max_values(i,:);
+    [fr,e,BestStart,xi,yi]=...
+        peakfit(circle_response,initial_peak_position,21,1);
+    initial_peak_position=round(fr(2));
+    peak_positions(i)=fr(2);
+end
+
+%%
+[fr,e(j,i),BestStart,xi,yi]=...
+    peakfit(max_values(204,:),initial_peak_position,21);
+
+%%
+plot(max_values(35:45,:)')
+legend
 %%
 [V, index]=max(max_values);
 imshowpair(I,circle_temps{index},'blend');
 %%
-hold all
-plot(3:0.1:10,max_values)
-plot(3:0.1:10,max_value_noblur)
-plot(3:0.1:10,max_value_blur1)
+plot(max_values')
+% hold all
+% plot(3:0.1:10,max_values)
+% plot(3:0.1:10,max_value_noblur)
+% plot(3:0.1:10,max_value_blur1)

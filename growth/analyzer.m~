@@ -53,17 +53,15 @@ for pn=1:1:length(seeds_location)
     [max_values_group{pn},max_locations_group{pn},...
         center_locations_group{pn},peak_location_group{pn}]=...
         find_circle_sizes(video_file_name, one_particle_frame,...
-        circle_temps,circle_temps_diameter,0);
+        circle_temps,0);
     toc
     
 end
 
-%%
-scale_bar=0.5/78;
 %% plot all the growth curves in one figure
 hold all
 for i=1:1:length(seeds_location)
-    plot(peak_location_group{i}(:,2)*scale_bar*1000);
+    plot(peak_location_group{i}(:,2));
 end
 
 %% plot growth curves in small sub figures
