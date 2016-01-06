@@ -76,11 +76,16 @@ figure
 imagesc(ImageFrames{end});
 axis image
 colormap(gray);
+for i=1:1:bubble_count
+    rectangle('Position', bubble_position{i}, 'LineWidth',2, 'EdgeColor','r');
+end
 h = imrect
 
 uicontrol('Style', 'pushbutton', 'String', 'Done',...
     'Position', [20 20 50 20],...
     'Callback', 'delete(h)');
+
+
 while isvalid(h)
     p = wait(h);
     if ~isempty(p)
@@ -138,11 +143,18 @@ plot(bubble_size_diff(1,:),'o');
 plot(bubble_size_diff(2,:),'o');
 plot(bubble_size_diff(3,:),'o');
 
+%%
+f=figure;
+hold all
+for i=1:1:bubble_count
+    time=1:1:numel(bubble_size_diff(i,:));
+    growth_rate{i}=fit_exclude_outliers(time,bubble_size_diff(i,:),500,[-2000 2000],1);
+%     scatter(time,bubble_size_diff(i,:));
+%     plot(time,time*growth_rate{i}(1)+growth_rate{i}(2));
+end
 %% we want to get rid of the outliers for fitting
-load moore
-X = [moore(:,1:5)];
-y = moore(:,6);
-
+growth_rate{i}=fit_exclude_outliers(time,bubble_size_diff(8,:),500,...
+    [-2000 2000],1);
 %%
 
 I_end=imcrop(ImageFrames{end-300},...

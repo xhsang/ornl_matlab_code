@@ -108,7 +108,7 @@ while hasFrame(xyloObj)
         key_frame=key_frame+frame_interval;
         temp = double(rgb2gray(current_frame));
         ImageFrames{j}=temp(read_rangex,read_rangey);
-        if mod(j-1, 100)==0
+        if j==1 || mod(j, 100)==0
             TimeTagFrames{j}=temp(timetag_rangex,timetag_rangey);
         end
         j=j+1;
@@ -121,10 +121,10 @@ key_frame_num=j-1;
 
 %%
 figure
-subplot(4,1,1);imagesc(TimeTagFrames{1});axis image off; title('Frame 1');
-subplot(4,1,2);imagesc(TimeTagFrames{101});axis image off; title('Frame 101');
-subplot(4,1,3);imagesc(TimeTagFrames{201});axis image off; title('Frame 201');
-subplot(4,1,4);imagesc(TimeTagFrames{301});axis image off; title('Frame 301');
+subplot(4,1,1);imagesc(TimeTagFrames{1});axis image off; title('Frame1'
+subplot(4,1,2);imagesc(TimeTagFrames{100});axis image off
+subplot(4,1,3);imagesc(TimeTagFrames{200});axis image off
+subplot(4,1,4);imagesc(TimeTagFrames{300});axis image off
 
 %% find the seeds from the first frame
 % ignore
