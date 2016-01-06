@@ -63,7 +63,7 @@ scale_bar=0.5/78;
 %% plot all the growth curves in one figure
 hold all
 for i=1:1:length(seeds_location)
-    plot(peak_location_group{i}(:,2)*scale_bar*1000);
+    plot(peak_location_group{i}(:,2).^2*scale_bar*1000);
 end
 
 %% plot growth curves in small sub figures

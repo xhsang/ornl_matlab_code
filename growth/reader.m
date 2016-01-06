@@ -4,6 +4,10 @@
 %% assign the video file name
 video_file_name='/Users/xs1/Documents/Pt_EXP_14_SS6_40kx_trimmed.m4v';
 
+%%
+video_file_name=...
+    '/Users/xs1/Documents/ORNL/Bubble growth/Pt_EXP_15_SS6_80kx/Pt EXP 15 SS6 80kx trimmed.m4v';
+
 %% get information of the video if it is avi form
 % simply to check if that the 
 aviinfo(video_file_name)
@@ -46,6 +50,8 @@ xyloObj=VideoReader(video_file_name);
 
 [folder,name,ext] = fileparts(video_file_name);
  
+
+%%
 if ~exist([folder,'/example_frames'], 'dir')
     mkdir([folder,'/example_frames']);
 end
@@ -60,6 +66,12 @@ end
 
 first_frame=11;
 second_frame=55;
+
+%%
+first_frame=29;
+second_frame=54;
+
+%%
 frame_interval=second_frame-first_frame;
 k=0;
 
