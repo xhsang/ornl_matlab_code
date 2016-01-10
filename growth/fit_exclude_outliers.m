@@ -1,4 +1,4 @@
-function P=fit_exclude_outliers(y,x,threshold,x0_range,verbose)
+function [P, x_corrected,y_corrected]=fit_exclude_outliers(y,x,threshold,x0_range,verbose)
 
 x_slope=NaN(numel(x),numel(x));
 x_slope_bk=x_slope;
@@ -69,13 +69,13 @@ if verbose~=0
     plot(distance,'o');
     ylim([0 10*threshold]);
 end
-y_corrected=y(distance<threshold&x~=0);
-x_corrected=x(distance<threshold&x~=0);
-P = polyfit(y_corrected,x_corrected,1);
+x_corrected=y(distance<threshold&x~=0);
+y_corrected=x(distance<threshold&x~=0);
+P = polyfit(x_corrected,y_corrected,1);
 if verbose~=0
     subplot(2,3,6);
     hold all
-    plot(y_corrected,x_corrected,'o');
+    plot(x_corrected,y_corrected,'o');
     plot(y,P(2)+y*P(1))
 end
 

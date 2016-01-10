@@ -39,10 +39,10 @@ h = imrect;
 
 position = wait(h);
 position=floor(position);
-read_rangex=position(2):1:position(2)+position(4);
-read_rangey=position(1):1:position(1)+position(3);
-read_area=mov(1).cdata(read_rangex,read_rangey);
-imagesc(read_area);
+image_rangex=position(2):1:position(2)+position(4);
+image_rangey=position(1):1:position(1)+position(3);
+image_area=mov(1).cdata(image_rangex,image_rangey);
+imagesc(image_area);
 axis image
 
 %% read time tags
@@ -75,7 +75,7 @@ end
 k=1;
 for k=1:1:100
     current_frame=readFrame(xyloObj);
-    imwrite(current_frame(read_rangex,read_rangey),[folder,'/example_frames/frame',num2str(k),'.jpg'],'jpg');
+    imwrite(current_frame(image_rangex,image_rangey),[folder,'/example_frames/frame',num2str(k),'.jpg'],'jpg');
 end
 
 %% read and output the key frames
@@ -103,11 +103,11 @@ j=1;
 while hasFrame(xyloObj)
     current_frame=readFrame(xyloObj);
     if k==key_frame
-        imwrite(current_frame(read_rangex,read_rangey),[folder,'/key_frames/frame'...
+        imwrite(current_frame(image_rangex,image_rangey),[folder,'/key_frames/frame'...
             ,num2str(k),'.jpg'],'jpg');
         key_frame=key_frame+frame_interval;
         temp = double(rgb2gray(current_frame));
-        ImageFrames{j}=temp(read_rangex,read_rangey);
+        ImageFrames{j}=temp(image_rangex,image_rangey);
         if mod(j-1, 100)==0
             TimeTagFrames{j}=temp(timetag_rangex,timetag_rangey);
         end
@@ -126,6 +126,17 @@ subplot(4,1,2);imagesc(TimeTagFrames{101});axis image off; title('Frame 101');
 subplot(4,1,3);imagesc(TimeTagFrames{201});axis image off; title('Frame 201');
 subplot(4,1,4);imagesc(TimeTagFrames{301});axis image off; title('Frame 301');
 
+%% calibrate the time (s) for 80K
+frame_time=((19-11)*60+(51-25))/300
+
+%% calibrate the frame time for 40K
+frame_time=((10-0)*60+(15-27)+0.133-0.4)/200
+
+%% calibrate the scalebar for 40K
+scale_bar=1000*0.5/78
+
+%% calibrate the scalebar for 80K nm/pixel
+scale_bar=1000*0.2/62
 %% find the seeds from the first frame
 % ignore
 figure;

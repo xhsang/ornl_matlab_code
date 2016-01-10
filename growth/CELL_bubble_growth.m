@@ -147,11 +147,30 @@ plot(bubble_size_diff(3,:),'o');
 f=figure;
 hold all
 for i=1:1:bubble_count
-    time=1:1:numel(bubble_size_diff(i,:));
-    growth_rate{i}=fit_exclude_outliers(time,bubble_size_diff(i,:),500,[-2000 2000],1);
+    time=0:1:numel(bubble_size_diff(i,:))-1;
+    [growth_rate{i},x_corrected{i},y_corrected{i}]=...
+        fit_exclude_outliers(time,bubble_size_diff(i,:),500,[-2000 2000],1);
 %     scatter(time,bubble_size_diff(i,:));
 %     plot(time,time*growth_rate{i}(1)+growth_rate{i}(2));
 end
+
+%%
+f=figure;
+hold all
+D=zeros(bubble_count,1);
+t0=zeros(bubble_count,1);
+for i=1:1:bubble_count
+    scatter(x_corrected{i}*frame_time,...
+        scale_bar*y_corrected{i}.^0.5);
+    plot(frame_time*time,...
+        scale_bar*(time*growth_rate{i}(1)+growth_rate{i}(2)).^0.5);
+    C1=growth_rate{i}(1)*scale_bar^2/frame_time;
+    C2=growth_rate{i}(2)*scale_bar^2;
+    D(i)=sqrt(C1);
+    t0(i)=C2/C1;
+end
+xlabel('time (s)');
+ylabel('Average radius (nm)');
 %% we want to get rid of the outliers for fitting
 growth_rate{i}=fit_exclude_outliers(time,bubble_size_diff(8,:),500,...
     [-2000 2000],1);
