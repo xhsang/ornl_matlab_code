@@ -135,7 +135,8 @@ end
 I4 = bwareaopen(1-I3, 10);
 imshowpair(I4,I,'montage');
 %%
-BW =edge(I,'Canny',0.4,3);
+I5=ImageFrames{end};
+BW =edge(I5,'Canny',0.2,3);
 imshowpair(BW,I)
 %BW=imdilate(BW,strel('diamond',1)) ;
 imagesc(BW);

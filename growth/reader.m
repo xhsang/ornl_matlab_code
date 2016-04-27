@@ -266,8 +266,14 @@ imagesc(ctemp);
 
 %% use this function to get a bunch of circles, either blurred or not
 ctemp_size=51;
-circle_temps_diameter=1:0.2:20;
-circle_temps=get_circle_templates(circle_temps_diameter,ctemp_size,1);
+circle_temps_diameter=2:0.2:25;
+blur_list=[0.2:0.2:0.8 1:1:10];
+%blur_list=0.8;
+[circle_temps]=get_circle_templates(circle_temps_diameter,ctemp_size,blur_list);
+%%
+big_image=merge_cell_image(circle_temps,10,1);
+imagesc(big_image);
+axis image;
 %% test this on one frame to see if that works
 max_values=zeros(length(circle_temps),1);
 for i=1:1:length(circle_temps)

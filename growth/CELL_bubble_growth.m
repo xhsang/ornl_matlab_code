@@ -1,6 +1,6 @@
 %%
 i=11;
-I5=ImageFrames{i+30}-ImageFrames{i};
+I5=ImageFrames{end}-ImageFrames{end-30};
 imagesc(I5);
 colormap(gray);
 axis image off
@@ -27,7 +27,7 @@ R1=I5(read_rangex,read_rangey);
 JN = CoherenceFilter(R1,struct('T',10,'rho',5,'Scheme','N'));
 %%
 Edge5 =edge(JN,'Canny',0.4);
-imshowpair(Edge5,ImageFrames{i+30}(read_rangex,read_rangey));
+imshowpair(Edge5,I5(read_rangex,read_rangey),'montage');
 
 %%
 surf(R1);
@@ -61,7 +61,7 @@ for i=1:10:length(ImageFrames)-30
     JN = CoherenceFilter(read_area,struct('T',5,'rho',5,'Scheme','N'));
     Edge5 =edge(JN,'Canny',0.5);
     f=figure;
-    imshowpair(read_area,Edge5);
+    imshowpair(read_area,Edge5,'montage');
     
     print(f,'-dtiff', '-r300', [folder,'/outline/frame',num2str(i),'.tiff']);
     close(f);
@@ -78,7 +78,10 @@ axis image
 colormap(gray);
 for i=1:1:bubble_count
     rectangle('Position', bubble_position{i}, 'LineWidth',2, 'EdgeColor','r');
+    text(bubble_position{i}(1),bubble_position{i}(2),num2str(i));
 end
+
+%%
 h = imrect
 
 uicontrol('Style', 'pushbutton', 'String', 'Done',...
@@ -95,10 +98,166 @@ while isvalid(h)
     end
 end
 
-%% or easily find them
+
+%% or easily find them from the last frame
+
+I5=ImageFrames{end};
+%I5=cleanimage;
+BW =edge(I5,'Canny',[0.05 0.2],3);
+BW1 = imclose(BW, ones(5));
+%subplot(2,1,1);
+%imshowpair(BW,BW1,'montage');
+%BW=close_edges(BW,0);
+BW2= imfill(BW1,'holes');
+%subplot(2,1,2);
+imshowpair(BW2,I5,'montage')
+%BW=imdilate(BW,strel('diamond',1)) ;
+%imagesc(BW);
+
+%% find all the circular objects
+% and find the rectangles containing those objects
+[B,Combined,bubble_position,particle_size,...
+    max_height,max_width]...
+    =filter_particles(BW2,1.1,1);
+bubble_count=length(bubble_position);
+
+%%
+Edge5 =edge(JN,'Canny',0.4);
+imshowpair(Edge5,I5,'montage');
+
+%% return all the bubble frames
+
+%% visualize all the particles and frames
+step_size=20;
+size_threshold=1200;
+row_num=sum(particle_size>size_threshold);
+col_num=floor((length(ImageFrames)-1)/step_size)+1;
+%ha=tight_subplot(row_num,col_num,0.001,0.001,0.001);
+count=1;
+gap=2;
+big_imagex=row_num*(max_height+1)+(row_num-1)*gap;
+big_imagey=col_num*(max_width+1)+(col_num-1)*gap;
+big_image=255*ones(big_imagex, big_imagey);
+fit_result=ones(big_imagex, big_imagey);
+j_count=1;
+for j=1:1:bubble_count
+    if particle_size(j)<=size_threshold
+        continue;
+    end
+    
+    i_count=1;
+    for i=1:step_size:length(ImageFrames)
+        %axes(ha(count));
+        r=bubble_position{j};
+        start_x=floor(r(1)+r(3)/2-max_width/2);
+        start_y=floor(r(2)+r(4)/2-max_height/2);
+        bubble_sub=imcrop(ImageFrames{i},...
+            [start_x start_y max_width max_height]);
+        
+        imagex=(j_count-1)*(max_height+1)+(j_count-1)*gap+1;
+        imagey=(i_count-1)*(max_width+1)+(i_count-1)*gap+1;
+        big_image(imagex:imagex+max_height,...
+            imagey:imagey+max_width)=bubble_sub;
+        
+        %JN1{i_count,j_count} = ...
+        %    CoherenceFilter(bubble_sub,struct('T',5,'rho',5,'Scheme','N','verbose','none'));
+        Edge0=JN1{i_count,j_count} ;
+        %bubble_sub_set{i_count,j_count}=bubble_sub;
+        %I1=bubble_sub;
+        %Edge0=imdilate(I1, strel('square',3)) - I1;
+        Edge =edge(Edge0 ,'Canny',[0.1 0.2],2);
+        Edge1 = bwareafilt(Edge,1);
+        %Edge5=JN1{i_count,j_count} ;
+        Edge2 = imclose(Edge1, ones(4));
+        Edge5=imfill(Edge2,'holes');
+        
+        fit_result(imagex:imagex+max_height,...
+            imagey:imagey+max_width)=Edge5;
+        
+        i_count=i_count+1;
+    end
+    j_count=j_count+1;
+end
+imagesc(fit_result); 
+axis image off;
+colormap(gray);
+
+%%
+I1=bubble_sub_set{11,10};
+Edge0=imdilate(I1, strel('square',5)) - I1;
+Edge =edge(Edge0 ,'Canny',[0.1 0.3],3);
+imshowpair(Edge,Edge0,'montage');
+%%
+Edge1 = bwareafilt(Edge,1);
+%Edge5=JN1{i_count,j_count} ;
+Edge2 = imclose(Edge1, ones(4));
+Edge5=imfill(Edge2,'holes');
+%%
+imagesc(fit_result); 
+axis image off;
+colormap(gray);
+%% first get the bubble area
+bubble_area_set=get_bubble_area_set(ImageFrames,10,bubble_position{10},1,1);
+bubble_area_set_JN=get_bubble_area_set(ImageFrames,10,bubble_position{10},2,1);
+%%
+bubble_area_set_GS=get_bubble_area_set(ImageFrames,10,bubble_position{10},3,1,2);
+
+%% then find the outline of this crap JN
+[bubble_edge, bubble_size_JN]=single_bubble_track(bubble_area_set_JN,1);
+%% GS
+[bubble_edge, bubble_size_GS]=single_bubble_track(bubble_area_set_GS,1);
+%% non blurred
+[bubble_edge, bubble_size_non]=single_bubble_track(bubble_area_set,1);
+%% some test cases
+bubble_area_set_test{1}=circshift(padarray(circle_temps{10},[10 20]),[5 7]);
+
+%% match with the circles
+[circle_matched,bubble_size,particle_position,particle_radius]=...
+    track_circle_sizes_2D(mat_file_name,bubble_area_set,...
+    circle_temps(:,4),...
+    circle_temps_diameter,blur_list(4),0);
+%% maybe use the circles to modify the raw data crap
+range=1:21;
+[modified_particle_area,rdf_map]=...
+    modify_bubble_area_from_circles(mat_file_name,bubble_area_set(range),...
+    circle_matched(range),particle_position(range,:),particle_radius(range),1);
+%%
+[bubble_edge, bubble_size_rdf]=single_bubble_track(modified_particle_area,1);
+%%
+hold all
+plot(bubble_size_JN,'o');
+plot(bubble_size_GS,'d');
+plot(bubble_size_non,'o');
+plot(bubble_size_rdf,'s');
+
+%%
+f=figure;
+hold all
+for i=1:1:bubble_count
+    bubble_area_set=get_bubble_area_set(ImageFrames,10,...
+        bubble_position{i},1,0,1,size(circle_temps{1}));
+    [circle_matched,bubble_size,particle_position,particle_radius]=...
+        track_circle_sizes_2D(mat_file_name,bubble_area_set,...
+        circle_temps(:,4),...
+        circle_temps_diameter,blur_list(4),0);
+    range=1:21;
+    [modified_particle_area,rdf_map]=...
+        modify_bubble_area_from_circles(mat_file_name,bubble_area_set(range),...
+        circle_matched(range),particle_position(range,:),particle_radius(range),0);
+    [bubble_edge, bubble_size_rdf]=single_bubble_track(modified_particle_area,0);
+    plot(bubble_size_rdf,'s');
+end
+%%
+hold all
+imagesc(circle_matched{end});
+plot(particle_position(:,2),particle_position(:,1),'ro-');
+%%
+JN_set=test_JN_parameters(bubble_area_set{5});
+%% test which JN paramter works the best
+single_bubble_track(JN_set,1);
 %% looks like this section matters the most
 diff_verbose=1;
-diff_test=1;
+diff_test=0;
 diff_step=30;
 bubble_size_diff=zeros(bubble_count,length(ImageFrames));
 tophat_verbose=0;
@@ -117,8 +276,12 @@ for j=1:1:bubble_count
         for i=length(ImageFrames):-10:diff_step+1
             bubble_sub=imcrop(ImageFrames{i}-ImageFrames{i-diff_step},...
                 bubble_position{j});
+            bubble_sub=imcrop(ImageFrames{i},...
+                bubble_position{j});
             JN = CoherenceFilter(bubble_sub,struct('T',5,'rho',5,'Scheme','N','verbose','none'));
-            Edge5 =edge(JN,'Canny',0.5);
+            JN = bubble_sub;
+            %Edge5 =edge(JN,'Canny',0.5);
+            Edge5 =edge(JN,'Canny',[0.05 0.2],3);
             Edge5=close_edges(Edge5,0);
             Edge5=imfill(Edge5,'holes');
             bubble_size_diff(j,i)=sum(Edge5(:));
@@ -131,7 +294,21 @@ for j=1:1:bubble_count
             end
         end
     end
-    
+    if diff_test == 0
+        for i=1:step_size:length(ImageFrames)
+            r=bubble_position{j};
+            start_x=floor(r(1)+r(3)/2-max_width/2);
+            start_y=floor(r(2)+r(4)/2-max_height/2);
+            bubble_sub=imcrop(ImageFrames{i},...
+                [start_x start_y max_width max_height]);JN = bubble_sub;
+            JN=bubble_sub;
+            Edge5 =edge(JN,'Canny',[0.05 0.2],3);
+            Edge5 = imclose(Edge5, ones(5));
+            Edge5=imfill(Edge5,'holes');
+            bubble_size_diff(j,i)=sum(Edge5(:));
+            bubble_area{j,i}=Edge5;
+        end
+    end
     % now the second approach, we can simply use tophat approach
     for i=1:10
     end
