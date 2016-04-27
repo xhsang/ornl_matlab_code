@@ -33,57 +33,32 @@ for i=1:1:N
         end
     end
     rdf=rdf./rdf_count;
-    [xData, yData] = prepareCurveData( 1:1:length(rdf), rdf );
-    
-    ft = fittype( 'a1*exp(-((x-b1)/c1)^2)+d1', 'independent', 'x', 'dependent', 'y' );
-    opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-    opts.Display = 'Off';
-    opts.StartPoint = [max(rdf)-min(rdf) particle_radius(i) 2 min(rdf)];
-    [fitresult, gof] = fit( xData, yData, ft, opts );
-    rdf_gauss=fitresult(xData);
-    rdf_gauss=rdf_gauss-min(rdf_gauss);
     
     angle=-720:10:720;
     r_x=particle_position(i,1)+particle_radius(i)*cosd(angle);
     r_y=particle_position(i,2)+particle_radius(i)*sind(angle);
     [cx,cy,c]=improfile(bubble_area{i},r_y,r_x,length(r_y));
     yfilt = conv (c, gaussFilter, 'same');
-    yfilt=yfilt(72:108);
+    yfilt=yfilt(18:54);
+    gridtheta=atan2d(gridy-particle_position(i,1),gridx-particle_position(i,2));
+    y_filter=1./(yfilt-min(yfilt)+10);
+    y_filter=max(y_filter)*0+y_filter;
+    rdf_map{i}=(rdf(ceil(gridr))-min(rdf)).*y_filter(ceil(gridtheta/10+18));
     
-    gridtheta=atan2d(gridx-particle_position(i,2),gridy-particle_position(i,1));
-    gridtheta(gridtheta<0)=gridtheta(gridtheta<0)+360;
-    
-    y_filter=1./(yfilt);
-    y_filter=y_filter-min(y_filter);
-    angle1=0:10:360;
-    y_fiter_fit=fit(angle1',y_filter,'smoothingspline');
-    y_filter_fine=y_fiter_fit(0:1:360);
-    
-    t_map{i}=y_filter_fine(max(ceil(gridtheta),1));    
     
     %plot(rdf);
     % then create a new map with the calculated RDF
-    rdf_map{i}=rdf_gauss(ceil(gridr)).*t_map{i};
-    rdf_map{i}=rdf_map{i}/max(rdf_map{i}(:));
+    rdf_map{i}=rdf(ceil(gridr));
     if verbose == 1
         f=figure;
-        
-        subplot(2,2,1);
-        imagesc(rdf_map{i});
-        colormap(gray);
-        
-        subplot(2,2,2);
-        imagesc((rdf_map{i}+1).*bubble_area{i});
-        colormap(gray);
-        
-        E=(rdf_map{i}+1).*bubble_area{i};
+        E=rdf_map{i}.*bubble_area{i};
         Edge0=E;
         Edge =edge(Edge0 ,'Canny',[0.05 0.2],2);
         Edge1 = bwareafilt(Edge,1);
         %Edge5=JN1{i_count,j_count} ;
         Edge2 = imclose(Edge1, ones(4));
         
-        subplot(2,2,3);
+        subplot(1,2,1);
         hold all
         imagesc(E);
         colormap(gray);
@@ -97,7 +72,7 @@ for i=1:1:N
         %Edge5=JN1{i_count,j_count} ;
         Edge2 = imclose(Edge1, ones(4));
         
-        subplot(2,2,4);
+        subplot(1,2,2);
         hold all
         imagesc(bubble_area{i});
         axis image
@@ -107,7 +82,7 @@ for i=1:1:N
         print(f,'-dtiff', '-r300', [folder,'/particle_enhanced_edge/frame',num2str(i),'.tiff']);
         close(f);
     end
-    modified_particle_area{i}=(rdf_map{i}+1).*bubble_area{i};
+    modified_particle_area{i}=rdf_map{i}.*bubble_area{i};
 end
 end
 
