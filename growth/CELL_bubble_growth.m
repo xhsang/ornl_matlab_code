@@ -197,8 +197,8 @@ imagesc(fit_result);
 axis image off;
 colormap(gray);
 %% first get the bubble area
-bubble_area_set=get_bubble_area_set(ImageFrames,10,...
-        bubble_position{7},1,1,1,size(circle_temps{1}));
+bubble_area_set=get_bubble_area_set(ImageFrames,1,...
+        bubble_position{7},1,0,1,size(circle_temps{1}));
     %%
 bubble_area_set_JN=get_bubble_area_set(ImageFrames,10,bubble_position{10},2,1);
 %%
@@ -209,17 +209,17 @@ bubble_area_set_GS=get_bubble_area_set(ImageFrames,10,bubble_position{10},3,1,2)
 %% GS
 [bubble_edge, bubble_size_GS]=single_bubble_track(bubble_area_set_GS,1);
 %% non blurred
-[bubble_edge, bubble_size_non]=single_bubble_track(bubble_area_set,1);
+[bubble_edge, bubble_size_non]=single_bubble_track(bubble_area_set(1:end),1,0);
 %% some test cases
 bubble_area_set_test{1}=circshift(padarray(circle_temps{10},[10 20]),[5 7]);
 
 %% match with the circles
 [circle_matched,bubble_size,particle_position,particle_radius]=...
-    track_circle_sizes_2D(mat_file_name,bubble_area_set,...
+    track_circle_sizes_2D(mat_file_name,bubble_area_set(1:20),...
     circle_temps(:,4),...
     circle_temps_diameter,blur_list(4),1);
 %% maybe use the circles to modify the raw data crap
-range=6:7;
+range=1:20;
 [modified_particle_area,rdf_map]=...
     modify_bubble_area_from_circles(mat_file_name,bubble_area_set(range),...
     circle_matched(range),particle_position(range,:),particle_radius(range),1);
@@ -240,7 +240,7 @@ plot(bubble_size_rdf,'s');
 if ~exist([folder,'/overall'], 'dir')
     mkdir([folder,'/overall']);
 end
-for i=7:1:7%bubble_count
+for i=1:1:bubble_count
     bubble_area_set=get_bubble_area_set(ImageFrames,2,...
         bubble_position{i},1,0,1,size(circle_temps{1}));
     [circle_matched,bubble_size,particle_position,particle_radius]=...
@@ -251,21 +251,21 @@ for i=7:1:7%bubble_count
     [modified_particle_area,rdf_map]=...
         modify_bubble_area_from_circles(mat_file_name,bubble_area_set(range),...
         circle_matched(range),particle_position(range,:),particle_radius(range),0);
-    [bubble_edge_rdf, bubble_size_rdf]=single_bubble_track(modified_particle_area,0,1);
-    [bubble_edge_non, bubble_size_non]=single_bubble_track(bubble_area_set,0,1);
+    [bubble_edge_rdf_set{i}, bubble_size_rdf_set{i}]=single_bubble_track(modified_particle_area,0,1);
+    [bubble_edge_non_set{i}, bubble_size_non_set{i}]=single_bubble_track(bubble_area_set,0,1);
     f=figure;
     f.PaperPosition=[1 1 17 8];
     subplot(2,3,1);
     hold all;
-    plot(bubble_size_rdf,'s');
-    plot(bubble_size_non,'d');
+    plot(bubble_size_rdf_set{i},'s');
+    plot(bubble_size_non_set{i},'d');
     subplot(2,3,2);
-    bubble_rdf=merge_cell_image_1D(bubble_edge_rdf,1,2);
+    bubble_rdf=merge_cell_image_1D(bubble_edge_rdf_set{i},1,2);
     imagesc(bubble_rdf);
     axis image off
     colormap(gray);
     subplot(2,3,3);
-    bubble_non=merge_cell_image_1D(bubble_edge_non,1,2);
+    bubble_non=merge_cell_image_1D(bubble_edge_non_set{i},1,2);
     imagesc(bubble_non);
     axis image off
     colormap(gray);
@@ -288,6 +288,31 @@ for i=7:1:7%bubble_count
         [folder,'/overall/bubble_',num2str(i),'.tiff']);
     close(f);
 end
+%% find the good ones
+good_list=0;
+
+%%
+time_axis=1:2:length(ImageFrames);
+time_axis=(time_axis-1)*frame_time;
+area_nm=bubble_size_rdf_set{7}*scale_bar^2;
+plot(time_axis,area_nm);
+%%
+param=zeros(length(good_list),2);
+for i=3:1:5%length(good_list)
+    area_nm=bubble_size_rdf_set{good_list(i)}*scale_bar^2;
+    param(i,:)=fit_growth_curve(time_axis,area_nm.^0.5,1);
+end
+%% use this function to get a bunch of circles, either blurred or not
+ctemp_size=51;
+circle_temps_diameter=0.2:0.2:25;
+blur_list=[0.2:0.2:0.8 1:1:10];
+%blur_list=0.8;
+[circle_temps]=get_circle_templates(circle_temps_diameter,ctemp_size,blur_list);
+
+%%
+circle_big_image=merge_cell_image_1D(circle_temps,1,2);
+imagesc(circle_big_image);
+colormap(gray);
 %%
 hold all
 imagesc(circle_matched{end});

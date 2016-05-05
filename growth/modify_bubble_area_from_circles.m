@@ -21,6 +21,8 @@ gaussFilter = gaussFilter / sum (gaussFilter);
 for i=1:1:N
     [sizex,sizey]=size(bubble_area{i});
     [gridx,gridy]=meshgrid(1:sizey,1:sizex);
+    if particle_radius
+    end
     gridr=sqrt((gridx-particle_position(i,2)).^2+...
         (gridy-particle_position(i,1)).^2);
     rdf_R=ceil(max(gridr(:)));

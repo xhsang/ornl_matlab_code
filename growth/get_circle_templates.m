@@ -6,14 +6,18 @@ for m=1:1:length(blur_list)
         centerx=(ctemp_size+1)/2;
         centery=(ctemp_size+1)/2;
         circle_temps{k,m}=zeros(ctemp_size,ctemp_size);
-        for i=1:1:ctemp_size
-            for j=1:1:ctemp_size
-                d=sqrt((i-centerx)^2+(j-centery)^2);
-                %if round(d-circle_size(k))==0
-                %    circle_temps{k}(i,j)=1;
-                %end
-                circle_temps{k,m}(i,j)=exp(-((d-circle_size(k))^2/blur^2));
+        if circle_size(k)>=2
+            for i=1:1:ctemp_size
+                for j=1:1:ctemp_size
+                    d=sqrt((i-centerx)^2+(j-centery)^2);
+                    %if round(d-circle_size(k))==0
+                    %    circle_temps{k}(i,j)=1;
+                    %end
+                    circle_temps{k,m}(i,j)=exp(-((d-circle_size(k))^2/blur^2));
+                end
             end
+        else
+            circle_temps{k,m}=fspecial('gaussian',ctemp_size,circle_size(k));
         end
         %circle_temps{k}=imgaussfilt(circle_temps{k},blur);
     end
