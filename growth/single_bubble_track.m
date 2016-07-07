@@ -1,6 +1,6 @@
 % this function tries to find outline of a single bubble from frames
 
-function [bubble_edge, bubble_size]=single_bubble_track(bubble_area,verbose,constraint)
+function [bubble_edge, bubble_size]=single_bubble_track(bubble_area,verbose,constraint,guass_blur)
 
 % constraint tells us if we want to constraint edge detector area
 % normally we deal with nanoparticle growth
@@ -15,7 +15,7 @@ N=length(bubble_area);
 bubble_size=zeros(N,1);
 for i=N:-1:1
     Edge0=bubble_area{i};
-    Edge =edge(Edge0 ,'Canny',[0.05 0.2],2);
+    Edge =edge(Edge0 ,'Canny',[0.05 0.2],guass_blur);
     if constraint==1 && i<N
         last_edge=bwmorph(bubble_edge{i+1},'thicken',5);
         Edge(last_edge==0)=0;

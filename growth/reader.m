@@ -7,6 +7,12 @@ video_file_name='/Users/xs1/Documents/Pt_EXP_14_SS6_40kx_trimmed.m4v';
 %%
 video_file_name=...
     '/Users/xs1/Documents/ORNL/Bubble growth/Pt_EXP_15_SS6_80kx/Pt EXP 15 SS6 80kx trimmed.m4v';
+%%
+video_file_name=...
+    '/Users/xs1/Documents/ORNL/Bubble growth/Pt_EXP_15_SS6_160kx/Pt EXP 16 SS6 160kx trimmed.m4v';
+
+%%
+load('/Users/xs1/Documents/ORNL/Bubble growth/Pt_EXP_15_SS6_80kx/Pt EXP 15 SS6 80kx trimmed.mat');
 
 %% get information of the video if it is avi form
 % simply to check if that the 
@@ -62,7 +68,7 @@ imagesc(timetag_area);
 axis image
 
 %% output some frames so we know which ones have complete scan
-xyloObj=VideoReader(video_file_name);
+
 
 [folder,name,ext] = fileparts(video_file_name);
  
@@ -71,10 +77,12 @@ xyloObj=VideoReader(video_file_name);
 if ~exist([folder,'/example_frames'], 'dir')
     mkdir([folder,'/example_frames']);
 end
-
-k=1;
-for k=1:1:100
+xyloObj=VideoReader(video_file_name);
+for k=1:1:2000
     current_frame=readFrame(xyloObj);
+    if mod(k,5)~=0
+        continue;
+    end
     imwrite(current_frame(image_rangex,image_rangey),[folder,'/example_frames/frame',num2str(k),'.jpg'],'jpg');
 end
 
@@ -87,31 +95,48 @@ second_frame=55;
 first_frame=29;
 second_frame=54;
 
+%%
+first_frame=35;
+second_frame=72;
+
 %% read key frames
 frame_interval=second_frame-first_frame;
-k=0;
+k=1;
+key_frame_list=first_frame:frame_interval:nof;
 
+%% if dwell time changed during acquisition, a different story
+key_frame_list=0;
+%%
+temp=1010:50:nof;
+key_frame_list=[key_frame_list;temp'];
+%%
 if ~exist([folder,'/key_frames'], 'dir')
     mkdir([folder,'/key_frames']);
 end
 
 tic
 xyloObj=VideoReader(video_file_name);
-key_frame=first_frame;
-j=1;
 
+
+j=1;
+k=1;
+key_frame=key_frame_list(j);
 while hasFrame(xyloObj)
     current_frame=readFrame(xyloObj);
     if k==key_frame
         imwrite(current_frame(image_rangex,image_rangey),[folder,'/key_frames/frame'...
             ,num2str(k),'.jpg'],'jpg');
-        key_frame=key_frame+frame_interval;
         temp = double(rgb2gray(current_frame));
         ImageFrames{j}=temp(image_rangex,image_rangey);
         if mod(j-1, 100)==0
             TimeTagFrames{j}=temp(timetag_rangex,timetag_rangey);
         end
         j=j+1;
+        if j<=length(key_frame_list)
+            key_frame=key_frame_list(j);
+        else
+            break;
+        end
     end
     k=k+1;
 end
@@ -127,16 +152,24 @@ subplot(4,1,3);imagesc(TimeTagFrames{201});axis image off; title('Frame 201');
 subplot(4,1,4);imagesc(TimeTagFrames{301});axis image off; title('Frame 301');
 
 %% calibrate the time (s) for 80K
-frame_time=((19-11)*60+(51-25))/300
+frame_time=(((19-11)*60+(51-25))/300)/25
 
 %% calibrate the frame time for 40K
-frame_time=((10-0)*60+(15-27)+0.133-0.4)/200
+frame_time=((10-0)*60+(15-27)+0.133-0.4)/(200*44)
 
+%% calibrate the frame time for 160K
+frame_time=2.626/37
 %% calibrate the scalebar for 40K
 scale_bar=1000*0.5/78
 
 %% calibrate the scalebar for 80K nm/pixel
 scale_bar=1000*0.2/62
+
+%% for 160K
+scale_bar=100/62;
+
+%%
+time_axis_list=(key_frame_list-key_frame_list(1))*frame_time;
 %% find the seeds from the first frame
 % ignore
 figure;

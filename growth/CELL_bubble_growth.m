@@ -73,7 +73,7 @@ end
 bubble_count=0;
 %% select multiple areas
 figure
-imagesc(ImageFrames{end});
+imagesc(ImageFrames{end-137});
 axis image
 colormap(gray);
 for i=1:1:bubble_count
@@ -81,7 +81,6 @@ for i=1:1:bubble_count
     text(bubble_position{i}(1),bubble_position{i}(2),num2str(i));
 end
 
-%%
 h = imrect
 
 uicontrol('Style', 'pushbutton', 'String', 'Done',...
@@ -100,11 +99,11 @@ end
 
 
 %% or easily find them from the last frame
-
-I5=ImageFrames{end};
+endframe=length(ImageFrames)-137;
+I5=ImageFrames{endframe};
 %I5=cleanimage;
 BW =edge(I5,'Canny',[0.05 0.2],3);
-BW1 = imclose(BW, ones(5));
+BW1 = imclose(BW, ones(1));
 %subplot(2,1,1);
 %imshowpair(BW,BW1,'montage');
 %BW=close_edges(BW,0);
@@ -161,7 +160,7 @@ for j=1:1:bubble_count
         
         %JN1{i_count,j_count} = ...
         %    CoherenceFilter(bubble_sub,struct('T',5,'rho',5,'Scheme','N','verbose','none'));
-        Edge0=JN1{i_count,j_count} ;
+        Edge0=bubble_sub ;
         %bubble_sub_set{i_count,j_count}=bubble_sub;
         %I1=bubble_sub;
         %Edge0=imdilate(I1, strel('square',3)) - I1;
@@ -197,25 +196,28 @@ imagesc(fit_result);
 axis image off;
 colormap(gray);
 %% first get the bubble area
-bubble_area_set=get_bubble_area_set(ImageFrames,1,...
-        bubble_position{7},1,0,1,size(circle_temps{1}));
-    %%
-bubble_area_set_JN=get_bubble_area_set(ImageFrames,10,bubble_position{10},2,1);
+area_step=1;
+bubble_area_set=get_bubble_area_set(ImageFrames(1:endframe),area_step,...
+    bubble_position{1},1,1,1,size(circle_temps{1}));
 %%
-bubble_area_set_GS=get_bubble_area_set(ImageFrames,10,bubble_position{10},3,1,2);
+bubble_area_set_JN=get_bubble_area_set...
+    (ImageFrames(1:endframe),area_step,bubble_position{1},2,1,0,size(circle_temps{1}));
+%%
+bubble_area_set_GS=get_bubble_area_set...
+    (ImageFrames(1:endframe),area_step,bubble_position{1},3,1,2,size(circle_temps{1}));
 
 %% then find the outline of this crap JN
-[bubble_edge, bubble_size_JN]=single_bubble_track(bubble_area_set_JN,1);
+[bubble_edge, bubble_size_JN]=single_bubble_track(bubble_area_set_JN,1,1,4);
 %% GS
-[bubble_edge, bubble_size_GS]=single_bubble_track(bubble_area_set_GS,1);
+[bubble_edge, bubble_size_GS]=single_bubble_track(bubble_area_set_GS,1,0,3);
 %% non blurred
-[bubble_edge, bubble_size_non]=single_bubble_track(bubble_area_set(1:end),1,0);
+[bubble_edge, bubble_size_non]=single_bubble_track(bubble_area_set(1:end),1,1);
 %% some test cases
 bubble_area_set_test{1}=circshift(padarray(circle_temps{10},[10 20]),[5 7]);
 
 %% match with the circles
 [circle_matched,bubble_size,particle_position,particle_radius]=...
-    track_circle_sizes_2D(mat_file_name,bubble_area_set(1:20),...
+    track_circle_sizes_2D(mat_file_name,bubble_area_set,...
     circle_temps(:,4),...
     circle_temps_diameter,blur_list(4),1);
 %% maybe use the circles to modify the raw data crap
@@ -234,14 +236,14 @@ hold all
 plot(bubble_size_JN,'o');
 plot(bubble_size_GS,'d');
 plot(bubble_size_non,'o');
-plot(bubble_size_rdf,'s');
+%plot(bubble_size_rdf,'s');
 
-%%
+%% this works better for lower mag
 if ~exist([folder,'/overall'], 'dir')
     mkdir([folder,'/overall']);
 end
 for i=1:1:bubble_count
-    bubble_area_set=get_bubble_area_set(ImageFrames,2,...
+    bubble_area_set=get_bubble_area_set(ImageFrames(1:endframe),1,...
         bubble_position{i},1,0,1,size(circle_temps{1}));
     [circle_matched,bubble_size,particle_position,particle_radius]=...
         track_circle_sizes_2D(mat_file_name,bubble_area_set,...
@@ -251,8 +253,8 @@ for i=1:1:bubble_count
     [modified_particle_area,rdf_map]=...
         modify_bubble_area_from_circles(mat_file_name,bubble_area_set(range),...
         circle_matched(range),particle_position(range,:),particle_radius(range),0);
-    [bubble_edge_rdf_set{i}, bubble_size_rdf_set{i}]=single_bubble_track(modified_particle_area,0,1);
-    [bubble_edge_non_set{i}, bubble_size_non_set{i}]=single_bubble_track(bubble_area_set,0,1);
+    [bubble_edge_rdf_set{i}, bubble_size_rdf_set{i}]=single_bubble_track(modified_particle_area,0,0);
+    [bubble_edge_non_set{i}, bubble_size_non_set{i}]=single_bubble_track(bubble_area_set,0,0);
     f=figure;
     f.PaperPosition=[1 1 17 8];
     subplot(2,3,1);
@@ -288,18 +290,138 @@ for i=1:1:bubble_count
         [folder,'/overall/bubble_',num2str(i),'.tiff']);
     close(f);
 end
+
+%% parameters for 160K
+gauss_blur=3;
+%% this works better for higher mag (80K)
+if ~exist([folder,'/overall'], 'dir')
+    mkdir([folder,'/overall']);
+end
+for i=3:1:bubble_count
+    area_step=2;
+    bubble_area_set=get_bubble_area_set(ImageFrames(1:endframe),area_step,...
+        bubble_position{i},1,0,1,size(circle_temps{1}));
+    
+    bubble_area_set_JN=get_bubble_area_set(ImageFrames(1:endframe),...
+        area_step,bubble_position{i},2,0,0,size(circle_temps{1}));
+    
+    bubble_area_set_GS=get_bubble_area_set(ImageFrames(1:endframe),...
+        area_step,bubble_position{i},3,0,2,size(circle_temps{1}));
+    
+    [bubble_edge_JN_set{i}, bubble_size_JN_set{i}]=single_bubble_track(bubble_area_set_JN,0,0,gauss_blur);
+    
+    [bubble_edge_GS_set{i}, bubble_size_GS_set{i}]=single_bubble_track(bubble_area_set_GS,0,0,gauss_blur);
+    
+    [bubble_edge_non_set{i}, bubble_size_non_set{i}]=single_bubble_track(bubble_area_set,0,0,gauss_blur);
+   f=figure;
+    f.PaperPosition=[1 1 17 8];
+    subplot(2,3,1);
+    hold all;
+    plot(bubble_size_JN_set{i},'s');
+    plot(bubble_size_GS_set{i},'d');
+    plot(bubble_size_non_set{i},'o');
+    subplot(2,3,2);
+    bubble_JN=merge_cell_image_1D(bubble_edge_JN_set{i},1,2);
+    imagesc(bubble_JN);
+    axis image off
+    colormap(gray);
+    subplot(2,3,3);
+    bubble_non=merge_cell_image_1D(bubble_edge_non_set{i},1,2);
+    imagesc(bubble_non);
+    axis image off
+    colormap(gray);
+    
+    subplot(2,3,4);
+    modified_area_big_image=...
+        merge_cell_image_1D(bubble_edge_GS_set{i},1,2);
+    imagesc(modified_area_big_image);
+    axis image off
+    colormap(gray);
+    
+    subplot(2,3,5);
+    bubble_area_big_image=...
+        merge_cell_image_1D(bubble_area_set,1,2);
+    imagesc(bubble_area_big_image);
+    axis image off
+    colormap(gray);
+    
+    subplot(2,3,6);
+    bubble_area_big_image_JN=...
+        merge_cell_image_1D(bubble_area_set_JN,1,2);
+    imagesc(bubble_area_big_image_JN);
+    axis image off
+    colormap(gray);
+    
+    print(f,'-dtiff', '-r300',...
+        [folder,'/overall/bubble_',num2str(i),'.tiff']);
+    close(f);
+end
+
+%% 40KV
+start_point=30:2:length(bubble_size_rdf_set{ig})-20;
+P_rdf=zeros(length(good_list),length(good_list));
+for i=1:1:length(good_list)
+    for j=1:1:length(start_point)
+        %figure;
+        ig=good_list(i);
+        time_axis=time_axis_list(1:area_step:endframe);
+        time_axis=time_axis';
+        area_nm=bubble_size_rdf_set{ig}*scale_bar^2;
+        P_rdf(i,j)=fit_exclude_outliers(time_axis(start_point(j):end),...
+            area_nm(start_point(j):end),0,0,0);
+    end
+end
+%% fit all those size curves 80kV
+start_point=10:2:length(bubble_size_JN_set{1})-5;
+P_JN=zeros(length(good_list),length(good_list));
+for i=1:1:length(good_list)
+    for j=1:1:length(start_point)
+        %figure;
+        ig=good_list(i);
+        time_axis=time_axis_list(1:area_step:endframe);
+        time_axis=time_axis;
+        area_nm=bubble_size_JN_set{ig}*scale_bar^2;
+        P_JN(i,j)=fit_exclude_outliers(time_axis(start_point(j):end),...
+            area_nm(start_point(j):end),0,0,0);
+    end
+end
+
 %% find the good ones
 good_list=0;
 
 %%
-time_axis=1:2:length(ImageFrames);
-time_axis=(time_axis-1)*frame_time;
-area_nm=bubble_size_rdf_set{7}*scale_bar^2;
-plot(time_axis,area_nm);
+hold all
+% time_axis=1:area_step:endframe;
+% time_axis=(time_axis-1)*frame_time;
+% time_axis=time_axis';
+% or
+time_axis=time_axis_list(1:area_step:endframe);
+area_nm=bubble_size_rdf_set{11}*scale_bar^2;
+exp=1;
+plot(time_axis,area_nm.^exp,'o');
+plot(time_axis_40,area_nm_40.^exp,'d-');
+plot(time_axis_160,area_nm_160.^exp,'s-');
+
+%%
+cftool((time_axis_160(10:end)),(area_nm_160(10:end)));
+%%
+time_axis_40=time_axis;
+area_nm_40=area_nm;
+save 40kx_curve time_axis_40 area_nm_40
+
+%%
+time_axis_160=time_axis;
+area_nm_160=area_nm;
+save 160kx_curve time_axis_160 area_nm_160
+
+%%
+load 40kx_curve
+load 160kx_curve
+
 %%
 param=zeros(length(good_list),2);
-for i=3:1:5%length(good_list)
-    area_nm=bubble_size_rdf_set{good_list(i)}*scale_bar^2;
+for i=1:1:1%length(good_list)
+    area_nm=bubble_size_JN_set{good_list(i)}*scale_bar^2;
     param(i,:)=fit_growth_curve(time_axis,area_nm.^0.5,1);
 end
 %% use this function to get a bunch of circles, either blurred or not
